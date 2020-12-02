@@ -1,30 +1,30 @@
 using Test
 
-function isvalid1(line)
+function parseline(line)
     m = match(r"(\d+)-(\d+) (\w): (\w+)",line)
     @assert !isnothing(m)
-    (b,e,c,p) = m.captures
-    parse(Int,b) <= length(filter(x->x==c[1], p)) <= parse(Int,e)
+    (parse(Int,m[1]), parse(Int,m[2]), m[3][1], m[4])
 end
+@test parseline("1-3 a: abcde") == (1,3,'a',"abcde")
 
-@test isvalid1("1-3 a: abcde")
-@test !isvalid1("1-3 b: cdefg")
-@test isvalid1("2-9 c: ccccccccc")
-
-function isvalid2(line)
-    m = match(r"(\d+)-(\d+) (\w): (\w+)",line)
-    @assert !isnothing(m)
-    (b,e,c,p) = m.captures
-    (p[parse(Int,b)] == c[1]) ⊻ (p[parse(Int,e)] == c[1])
+macro pw_str(line)
+    parseline(line)
 end
+@test pw"1-3 a: abcde" == (1,3,'a',"abcde")
 
-@test isvalid2("1-3 a: abcde")
-@test !isvalid2("1-3 b: cdefg")
-@test !isvalid2("2-9 c: ccccccccc")
+isvalid1(b, e, c, p) = b <= length(filter(x->x==c, p)) <= e
+@test isvalid1(pw"1-3 a: abcde"...)
+@test !isvalid1(pw"1-3 b: cdefg"...)
+@test isvalid1(pw"2-9 c: ccccccccc"...)
+
+isvalid2(b, e, c, p) = (p[b] == c) ⊻ (p[e] == c)
+@test isvalid2(pw"1-3 a: abcde"...)
+@test !isvalid2(pw"1-3 b: cdefg"...)
+@test !isvalid2(pw"2-9 c: ccccccccc"...)
 
 function main(fn)
     open("input/day02.txt") do f
-        println(length(filter(x->x,(map(fn, readlines(f))))))
+        println(length(filter(x->x,(map(x->fn(parseline(x)...), readlines(f))))))
     end
 end
 
