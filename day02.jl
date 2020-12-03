@@ -23,9 +23,7 @@ isvalid2(b, e, c, p) = (p[b] == c) ⊻ (p[e] == c)
 @test !isvalid2(pw"2-9 c: ccccccccc"...)
 
 function main(fn)
-    open("input/day02.txt") do f
-        println(length(filter(x->x,(map(x->fn(parseline(x)...), readlines(f))))))
-    end
+    println(sum(map(x->fn(parseline(x)...), eachline("input/day02.txt"))))
 end
 
 main(isvalid1)
