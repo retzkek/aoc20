@@ -41,6 +41,16 @@ end
         ("faded blue", [])
 end
 
+function graphrules(rules)
+    println("digraph {")
+    for b in rules
+        for c in b[2]
+            println("\"",b[1],"\" -> \"",c[2],"\"")
+        end
+    end
+    println("}")
+end
+
 function whatcontains(rules, bag)
     cs = map(x->x[1],filter(x->any(y->(y[2] == bag), x[2]), rules))
     if length(cs) == 0
@@ -81,3 +91,8 @@ function main()
 end
 
 main()
+
+function graph()
+    r = eachline("input/day07.txt") .|> parserule
+    graphrules(r)
+end
