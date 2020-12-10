@@ -63,8 +63,24 @@ end
 @test readnums(Int, IOBuffer(testinput)) |> differences == (7,5)
 @test readnums(Int, IOBuffer(testinput2)) |> differences == (22,10)
 
+function arrangements(v::Vector{T})::Int where (T<:Number)
+    sv=[0;sort(v)]
+    branches = Dict(i=>filter(x->i-3<=x<i, sv) for i in sv)
+    origins = Dict{Int,Int}()
+    for n in sv
+        origins[n] = length(branches[n]) > 0 ?
+            sum([origins[x] for x in branches[n]]) : 1
+        @debug "arrangements" n origins[n]
+    end
+    return origins[maximum(sv)]
+end
+@test readnums(Int, IOBuffer(testinput)) |> arrangements == 8
+@test readnums(Int, IOBuffer(testinput2)) |> arrangements == 19208
+
+
 function main()
     readnums(Int, "input/day10.txt") |> differences |> x->x[1]*x[2] |> println
+    readnums(Int, "input/day10.txt") |> arrangements |> println
 end
 
 
