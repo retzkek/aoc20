@@ -65,11 +65,9 @@ end
 
 function arrangements(v::Vector{T})::Int where (T<:Number)
     sv=[0;sort(v)]
-    branches = Dict(i=>filter(x->i-3<=x<i, sv) for i in sv)
-    origins = Dict{Int,Int}()
-    for n in sv
-        origins[n] = length(branches[n]) > 0 ?
-            sum([origins[x] for x in branches[n]]) : 1
+    origins = Dict{Int,Int}(0=>1)
+    for n in sv[2:end]
+        origins[n] = sum([origins[x] for x in filter(y->n-3<=y<n, sv)])
         @debug "arrangements" n origins[n]
     end
     return origins[maximum(sv)]
