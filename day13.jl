@@ -37,24 +37,17 @@ function part1()
 end
 part1()
 
-nroutes(i::Int, interval::Int) = interval>0 ? t->(t+i)/interval : missing
+# from https://rosettacode.org/wiki/Chinese_remainder_theorem#Julia
+function chineseremainder(n::Array, a::Array)
+    Π = prod(n)
+    mod(sum(ai * invmod(Π ÷ ni, ni) * (Π ÷ ni) for (ni, ai) in zip(n, a)), Π)
+end
 
 function firstsequential(buses::Vector{Int})::Int
-    fs = skipmissing([nroutes(i-1, buses[i]) for i in 1:length(buses)])
-    m = maximum(buses)
-    mt = findfirst(x->x==m, buses)-1
-    t(r) = r*m-mt
-    @debug "begin" fs m mt
-    r = 1
-    while true
-        rs = map(f->f(t(r)), fs)
-        @debug "find sequential" r rs t(r)
-        if all(isinteger, rs)
-            break
-        end
-        r += 1
-    end
-    return t(r)
+    ns = filter(x->x>0, buses)
+    as = [1-i for i in filter(x->buses[x]>0, 1:length(buses))]
+    @debug "firstsequential" ns as
+    return chineseremainder(ns, as)
 end
 @testset "firstsequential" begin
     @test firstsequential([17,-1,13,19]) == 3417
