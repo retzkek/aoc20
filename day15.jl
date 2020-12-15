@@ -4,29 +4,28 @@ using Test
 readinput(io) =  map(x->parse(Int,x), split(readline(io), ","))
 @test readinput(IOBuffer(b"0,3,6")) == [0,3,6]
 
-function next(ns)
-    p=findprev(x->x==ns[end], ns, length(ns)-1)
-    isnothing(p) ? 0 : length(ns)-p
+function next(ns, lasti, lastn)
+    haskey(ns, lastn) ? lasti-ns[lastn] : 0
 end
 @testset "next" begin
-    @test next([0,3,6]) == 0
-    @test next([0,3,6,0]) == 3
-    @test next([0,3,6,0,3]) == 3
-    @test next([0,3,6,0,3,3]) == 1
-    @test next([0,3,6,0,3,3,1]) == 0
-    @test next([0,3,6,0,3,3,1,0]) == 4
-    @test next([0,3,6,0,3,3,1,0,4]) == 0
+    @test next(Dict(0=>1,3=>2,6=>3), 4, 0) == 3
+    @test next(Dict(0=>4,3=>2,6=>3), 5, 3) == 3
 end
 
 function nth(seed, n)
-    ns = Vector{Int}(undef, n)
+    ns = Dict{Int,Int}()
     for i in 1:length(seed)
-        ns[i] = seed[i]
+        ns[seed[i]] = i
     end
+    lastn = seed[end]
+    nextn = 0
     for i in length(seed)+1:n
-        ns[i] = next(@view ns[1:i-1])
+        lastn = nextn
+        nextn = next(ns, i, lastn)
+        ns[lastn] = i
+        @debug "ns" i lastn nextn ns
     end
-    ns[end]
+    lastn
 end
 @testset "nth" begin
     @test nth([0,3,6], 2020) == 436
