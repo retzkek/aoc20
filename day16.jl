@@ -69,10 +69,14 @@ end
     @test length(inp.others) == 4
 end
 
+function invalidfields(tx::Ticket, rules::Vector{Rule})::Ticket
+    filter(x->!any([(x in y.range) for y in rules]), tx)
+end
+
 function invalidfields(inp::Input)::Ticket
     invalid = Ticket()
     for tx in inp.others
-        inv = filter(x->!any([(x in y.range) for y in inp.rules]), tx)
+        inv = invalidfields(tx, inp.rules)
         @debug "invalid" tx inv
         invalid = [invalid; inv]
     end
@@ -88,3 +92,88 @@ function part1()
     invalidfields(inp) |> sum |> println
 end
 part1()
+
+const testinput2 = b"""
+    class: 0-1 or 4-19
+    row: 0-5 or 8-19
+    seat: 0-13 or 16-19
+
+    your ticket:
+    11,12,13
+
+    nearby tickets:
+    3,9,18
+    15,1,5
+    5,14,9
+    """
+
+function filterothers!(inp::Input)
+    inp.others = filter(x->length(invalidfields(x, inp.rules))==0, inp.others)
+    @debug "filtered others" inp.others
+end
+@testset "filterothers" begin
+    inp = readinput(IOBuffer(testinput))
+    @test length(inp.others) == 4
+    filterothers!(inp)
+    @test length(inp.others) == 1
+end
+
+function fields(inp::Input)::Vector{String}
+    allfields = Set(map(x->x.field, inp.rules))
+    pos = [copy(allfields) for _ in inp.ticket]
+    known = ["" for _ in inp.ticket]
+    @debug "all possible fields" pos
+    # remove fields that don't meet rules
+    for tx in [inp.others; inp.ticket]
+        for i in 1:length(tx)
+            pos[i] = pos[i] ∩ Set(map(x->x.field, filter(x->(tx[i] in x.range), inp.rules)))
+        end
+    end
+    @debug "after applying rules" pos
+    # deduce remaining
+    while any(isempty, known)
+        before = count(isempty, known)
+        # only one possibility in a location
+        for i in 1:length(pos)
+            if length(pos[i])==1
+                known[i] = first(pos[i])
+                for j in 1:length(pos)
+                    setdiff!(pos[j],known[i])
+                end
+                @debug "found one possibility in location $i" pos known
+            end
+        end
+        # only one location with the field
+        for f in allfields
+            if count(x->(f in x), pos) == 1
+                i = findfirst(x->(f in x), pos)
+                known[i] = f
+                pos[i] = Set()
+                @debug "found one location with field $f" pos known
+            end
+        end
+        # only one location left unknown
+        if count(isempty, known) == 1
+            last = first(setdiff(allfields, Set(filter(!isempty, known))))
+            known[findfirst(isempty, known)] = last
+            @debug "only one location with field $last" pos known
+        end
+        if count(isempty, known) == before
+            @error "unable to deduce more locations!"
+            break
+        end
+    end
+    @info known
+    return known
+end
+@testset "fields" begin
+    inp = readinput(IOBuffer(testinput2))
+    @test fields(inp) == ["row", "class", "seat"]
+end
+
+function part2()
+    inp = readinput("input/day16.txt")
+    filterothers!(inp)
+    inp.ticket[[startswith(x,"departure") for x in fields(inp)]] |> prod |> println
+end
+part2()
