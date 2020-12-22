@@ -27,7 +27,7 @@ function readfoods(in)::Foods
 end
 @test length(readfoods(IOBuffer(testinput))) == 4
 
-function nonallergenic(foods::Foods)::Int
+function nonallergenic(foods::Foods)::Tuple{Int,String}
     ingredients = Aset()
     allergens = Aset()
     for f in foods
@@ -72,10 +72,17 @@ function nonallergenic(foods::Foods)::Int
     end
 
     # count non-allergenic ingredients
-    sum([length(setdiff(f.ingredients, values(known))) for f in foods])
+    c = sum([length(setdiff(f.ingredients, values(known))) for f in foods])
+    # combine allergenic ingredients
+    l = join([known[k] for k in sort(collect(keys(known)))], ",")
+    return c,l
 end
-@test nonallergenic(readfoods(IOBuffer(testinput))) == 5
+@test nonallergenic(readfoods(IOBuffer(testinput))) == (5,"mxmxvkd,sqjhc,fvjkl")
 
 function part1()
-    nonallergenic(readfoods("input/day21.txt")) |> println
+    nonallergenic(readfoods("input/day21.txt"))[1] |> println
+end
+
+function part2()
+    nonallergenic(readfoods("input/day21.txt"))[2] |> println
 end
